@@ -1,52 +1,69 @@
 package ar.edu.utn.frbb.tup.model;
 
-import ar.edu.utn.frbb.tup.controller.ClienteDto;
-
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 
-public class Cliente extends Persona{
+import ar.edu.utn.frbb.tup.controller.dto.ClienteDto;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
 
+@Entity
+@Table(name = "clientes")
+public class Cliente extends Persona {
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "tipo_persona", nullable = false, length = 20)
     private TipoPersona tipoPersona;
+
+    @Column(name = "banco", length = 100)
     private String banco;
+
+    @Column(name = "fecha_alta", nullable = false)
     private LocalDate fechaAlta;
-    private Set<Cuenta> cuentas = new HashSet<>();
+
+    @OneToMany(mappedBy = "titular")
+    @JsonManagedReference
+    private Set<Cuenta> cuentas;
+
+    @OneToMany(mappedBy = "numeroCliente")
+    private Set<Prestamo> prestamos;
+
 
     public Cliente() {
         super();
+        this.cuentas = new HashSet<>();  // IMPORTANTE: Inicializar el Set
     }
+
     public Cliente(ClienteDto clienteDto) {
         super(clienteDto.getDni(), clienteDto.getApellido(), clienteDto.getNombre(), clienteDto.getFechaNacimiento());
-        fechaAlta = LocalDate.now();
-        banco = clienteDto.getBanco();
+        this.fechaAlta = LocalDate.now();
+        this.banco = clienteDto.getBanco();
+        this.cuentas = new HashSet<>();
+
+        // Parsear y establecer el tipo de persona
+        try {
+            this.tipoPersona = TipoPersona.fromString(clienteDto.getTipoPersona());
+        } catch (IllegalArgumentException e) {
+            // Si falla, dejar null o manejar según tu lógica
+            this.tipoPersona = null;
+        }
+    }
+
+
+    public void setTipoPersona(TipoPersona tipoPersona) {
+        this.tipoPersona = tipoPersona;
     }
 
     public TipoPersona getTipoPersona() {
         return tipoPersona;
     }
 
-    public void setTipoPersona(TipoPersona tipoPersona) {
-        this.tipoPersona = tipoPersona;
-    }
-
-    public String getBanco() {
-        return banco;
-    }
-
-    public void setBanco(String banco) {
-        this.banco = banco;
-    }
-
-    public LocalDate getFechaAlta() {
-        return fechaAlta;
-    }
-
-    public void setFechaAlta(LocalDate fechaAlta) {
-        this.fechaAlta = fechaAlta;
-    }
 
     public Set<Cuenta> getCuentas() {
         return cuentas;
@@ -58,7 +75,7 @@ public class Cliente extends Persona{
     }
 
     public boolean tieneCuenta(TipoCuenta tipoCuenta, TipoMoneda moneda) {
-        for (Cuenta cuenta:
+        for (Cuenta cuenta :
                 cuentas) {
             if (tipoCuenta.equals(cuenta.getTipoCuenta()) && moneda.equals(cuenta.getMoneda())) {
                 return true;
@@ -76,4 +93,6 @@ public class Cliente extends Persona{
                 ", cuentas=" + cuentas +
                 '}';
     }
+
+
 }

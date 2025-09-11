@@ -1,6 +1,7 @@
 package ar.edu.utn.frbb.tup.controller.validator;
 
-import ar.edu.utn.frbb.tup.controller.ClienteDto;
+import ar.edu.utn.frbb.tup.controller.dto.ClienteDto;
+
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
@@ -8,9 +9,13 @@ import java.time.LocalDate;
 @Component
 public class ClienteValidator {
 
-
+    /**
+     * Valida los datos básicos del cliente
+     *
+     * @param clienteDto Datos del cliente a validar
+     */
     public void validate(ClienteDto clienteDto) {
-        if (!"F".equals(clienteDto.getTipoPersona()) || !"J".equals(clienteDto.getTipoPersona())) {
+        if (!"F".equals(clienteDto.getTipoPersona()) && !"J".equals(clienteDto.getTipoPersona())) {
             throw new IllegalArgumentException("El tipo de persona no es correcto");
         }
         try {

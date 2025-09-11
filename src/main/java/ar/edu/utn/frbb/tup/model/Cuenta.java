@@ -1,30 +1,69 @@
 package ar.edu.utn.frbb.tup.model;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Random;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 
+import ar.edu.utn.frbb.tup.model.exception.CantidadNegativaException;
+import ar.edu.utn.frbb.tup.model.exception.NoAlcanzaException;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+
+@Entity
+@Table(name = "cuentas")
 public class Cuenta {
-    private long numeroCuenta;
-    LocalDateTime fechaCreacion;
-    int balance;
-    TipoCuenta tipoCuenta;
-    Cliente titular;
-    TipoMoneda moneda;
+
+    @Id
+    @Column(name = "numero_cuenta", nullable = false, unique = true)
+    private Long numeroCuenta;
+
+    @Column(name = "fecha_creacion", nullable = false)
+    private LocalDateTime fechaCreacion;
+
+    @Column(name = "balance", nullable = false)
+    private BigDecimal balance;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "tipo_cuenta", nullable = false, length = 20)
+    private TipoCuenta tipoCuenta;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "moneda", nullable = false, length = 10)
+    private TipoMoneda moneda;
+
+    @JsonBackReference
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "dni_titular", nullable = false)
+    private Cliente titular;
 
     public Cuenta() {
-        this.numeroCuenta = new Random().nextLong();
-        this.balance = 0;
+        this.numeroCuenta = Math.abs(new Random().nextLong());
+        this.balance = BigDecimal.ZERO;
         this.fechaCreacion = LocalDateTime.now();
     }
 
-    public Cliente getTitular() {
-        return titular;
+    // Getters y Setters
+    public Long getNumeroCuenta() {
+        return numeroCuenta;
     }
 
-    public void setTitular(Cliente titular) {
-        this.titular = titular;
+
+    public BigDecimal getBalance() {
+        return balance;
     }
 
+    public Cuenta setBalance(BigDecimal balance) {
+        this.balance = balance;
+        return this;
+    }
 
     public TipoCuenta getTipoCuenta() {
         return tipoCuenta;
@@ -44,47 +83,34 @@ public class Cuenta {
         return this;
     }
 
-
-    public LocalDateTime getFechaCreacion() {
-        return fechaCreacion;
+    public Cliente getTitular() {
+        return titular;
     }
 
-    public Cuenta setFechaCreacion(LocalDateTime fechaCreacion) {
-        this.fechaCreacion = fechaCreacion;
-        return this;
+    public void setTitular(Cliente titular) {
+        this.titular = titular;
     }
 
-    public int getBalance() {
-        return balance;
-    }
-
-    public Cuenta setBalance(int balance) {
-        this.balance = balance;
-        return this;
-    }
-
-    public void debitarDeCuenta(int cantidadADebitar) throws NoAlcanzaException, CantidadNegativaException {
-        if (cantidadADebitar < 0) {
+    // Métodos de negocio
+    public void debitarDeCuenta(BigDecimal cantidadADebitar) throws NoAlcanzaException, CantidadNegativaException {
+        if (cantidadADebitar.compareTo(BigDecimal.ZERO) < 0) {
             throw new CantidadNegativaException();
         }
 
-        if (balance < cantidadADebitar) {
+        if (this.balance.compareTo(cantidadADebitar) < 0) {
             throw new NoAlcanzaException();
         }
-        this.balance = this.balance - cantidadADebitar;
+        this.balance = this.balance.subtract(cantidadADebitar);
     }
 
-    public void setNumeroCuenta(long numeroCuenta) {
-        this.numeroCuenta = numeroCuenta;
+    public void forzaDebitoDeCuenta(BigDecimal i) {
+        this.balance = this.balance.subtract(i);
     }
 
-    public void forzaDebitoDeCuenta(int i) {
-        this.balance = this.balance - i;
+    @Override
+    public String toString() {
+        return "Cuenta{" + "numeroCuenta=" + numeroCuenta + ", fechaCreacion=" + fechaCreacion + ", balance=" + balance
+                + ", tipoCuenta=" + tipoCuenta + ", moneda=" + moneda + ", titular=" + (titular != null
+                ? titular.getDni() : "null") + '}';
     }
-
-    public long getNumeroCuenta() {
-        return numeroCuenta;
-    }
-
-
 }
